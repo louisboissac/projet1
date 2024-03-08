@@ -1,1 +1,1 @@
-print("rinah")
+print("rinoh")
