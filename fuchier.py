@@ -1,39 +1,77 @@
-import pygame
-from pygame.locals import *
-from OpenGL.GL import *
-from OpenGL.GLU import *
+import numpy as np
+import matplotlib.pyplot as plt
+from noise import snoise2
+import random
 
-# Initialiser Pygame et OpenGL
-pygame.init()
-display = (800, 600)
-pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
-gluPerspective(45, display[0] / display[1], 0.1, 50.0)
-glTranslatef(0.0, 0.0, -5)
+# Set the size of the heightmap
+width = 200
+height = 200
 
-# Boucle principale
-running = True
-while running:
-    # Gérer les événements
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+# Set the scale of the noise (affects the level of detail)
+scale = 125.0
 
-    # Effacer l'écran avec une couleur blanche
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glClearColor(1.0, 1.0, 1.0, 1.0)
+# Set a random seed for the noise generation
+seed = random.randint(0, 1000000)
+random.seed(seed)
+np.random.seed(seed)
 
-    # Dessiner un quadrilatère blanc
-    glBegin(GL_QUADS)
-    glColor3f(1.0, 1.0, 1.0)
-    glVertex3f(-1.0, -1.0, 0.0)
-    glVertex3f(1.0, -1.0, 0.0)
-    glVertex3f(1.0, 1.0, 0.0)
-    glVertex3f(-1.0, 1.0, 0.0)
-    glEnd()
+# Generate the heightmap using Perlin noise
+heightmap = np.zeros((width, height))
+for i in range(width):
+    for j in range(height):
+        heightmap[i][j] = snoise2(i/scale, j/scale, octaves=6, persistence=0.5, lacunarity=2.0, repeatx=1024, repeaty=1024, base=seed)
 
-    # Mettre à jour l'affichage
-    pygame.display.flip()
-    pygame.time.wait(10)
+# Normalize the values to the range [0, 1]
+heightmap = (heightmap - np.min(heightmap)) / (np.max(heightmap) - np.min(heightmap))
 
-# Quitter Pygame et OpenGL
-pygame.quit()
+# Define color gradients based on elevation
+colors = [
+    (0, 0, 0.5),    # Deep water
+    (0, 0, 1),       # Shallow water
+    (0.8, 0.8, 0.2), # Beach
+    (0.2, 0.8, 0.2), # Land
+    (0.5, 0.5, 0.5), # Mountain
+    (1, 1, 1)        # Snow
+]
+
+# Interpolate colors based on elevation
+def interpolate_color(value, color_map):
+    value = max(0, min(1, value))
+    index = int(value * (len(color_map) - 1))
+    return np.array(color_map[index])
+
+# Generate colored heightmap
+colored_heightmap = np.zeros((width, height, 3))
+for i in range(width):
+    for j in range(height):
+        colored_heightmap[i][j] = interpolate_color(heightmap[i][j], colors)
+
+# Add a beach based on elevation threshold
+beach_threshold = 0.2
+beach_color = (0.8, 0.8, 0.2)  # Color for the beach
+
+beach_mask = heightmap < beach_threshold
+colored_heightmap[beach_mask] = beach_color
+
+# Random Viking city names
+viking_city_names = ["Asgard", "Valhalla", "Niflheim", "Midgard", "Jotunheim", "Helheim", "Svartalfheim", "Alfheim", "Vanaheim", "Muspelheim", "Yggdrasil", "Ragnarok", "Bifrost", "Fenrir", "Nidavellir"]
+
+# Generate random city coordinates and names
+num_cities = 10
+city_coordinates = []
+city_names = []
+
+while len(city_coordinates) < num_cities:
+    x, y = np.random.randint(0, width), np.random.randint(0, height)
+    if not beach_mask[x, y]:  # Check if the city is not on the beach
+        city_coordinates.append((x, y))
+        city_names.append(random.choice(viking_city_names))
+
+# Add city names to the plot
+for city_coord, city_name in zip(city_coordinates, city_names):
+    plt.text(city_coord[1], city_coord[0], city_name, color='black', fontsize=12, ha='center', va='center', fontname='Jokerman')
+
+# Display the colored heightmap in 2D
+plt.imshow(colored_heightmap, origin='lower')
+plt.title(f'2D Colored Heightmap with Beach (Seed: {seed})')
+plt.show()
