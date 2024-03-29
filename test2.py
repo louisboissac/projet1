@@ -30,7 +30,7 @@ colors = [
     (0, 0, 1),       # Shallow water
     (0.8, 0.8, 0.2), # Beach
     (0.2, 0.8, 0.2), # Land
-    (0.3, 0.2, 0.1), # Mountain
+    (0.3, 0.2, 0.1), # Mountain (marron foncé)
     (1, 1, 1)        # Snow
 ]
 
@@ -66,6 +66,8 @@ while len(city_coordinates) < num_cities:
     if not beach_mask[x, y]:  # Check if the city is not on the beach
         city_coordinates.append((x, y))
         city_names.append(random.choice(viking_city_names))
+        # Add a light brown point under the city
+        colored_heightmap[x, y] = (0.8, 0.6, 0.4)
 
 # Add city names to the plot
 for city_coord, city_name in zip(city_coordinates, city_names):
