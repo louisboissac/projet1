@@ -71,7 +71,7 @@ while len(city_coordinates) < num_cities:
 
 # Add city names to the plot
 for city_coord, city_name in zip(city_coordinates, city_names):
-    plt.text(city_coord[1], city_coord[0], city_name, color='black', fontsize=13, ha='center', va='center', fontname='Viking')
+    plt.text(city_coord[1], city_coord[0], city_name, color='black', fontsize=13, ha='center', va='center', fontfamily='cursive')
 
 # Display the colored heightmap in 2D
 plt.imshow(colored_heightmap, origin='lower')
