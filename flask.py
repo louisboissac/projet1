@@ -8,7 +8,7 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     # Rendre le template HTML de la page d'accueil
-    return render_template('index.html')
+    return render_template('interface.html')
 
 # Définir la route pour la page de génération de carte
 @app.route('/generer_carte', methods=['POST'])
