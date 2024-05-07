@@ -3,77 +3,157 @@ import matplotlib.pyplot as plt
 from noise import snoise2
 import random
 
-# Set the size of the heightmap
-width = 200
-height = 200
 
-# Set the scale of the noise (affects the level of detail)
-scale = 125.0
+# Définition de la taille de la carte en hauteur et en largeur
+largeur = 300
+hauteur = 300
 
-# Set a random seed for the noise generation
-seed = random.randint(0, 1000000)
-random.seed(seed)
-np.random.seed(seed)
+# Définition de l'échelle du bruit (affecte le niveau de détail)
+echelle = 150.0
 
-# Generate the heightmap using Perlin noise
-heightmap = np.zeros((width, height))
-for i in range(width):
-    for j in range(height):
-        heightmap[i][j] = snoise2(i/scale, j/scale, octaves=6, persistence=0.5, lacunarity=2.0, repeatx=1024, repeaty=1024, base=seed)
+# Définition d'une graine aléatoire pour la génération du bruit
+graine = random.randint(0, 1000000)
+random.seed(graine)
+np.random.seed(graine)
 
-# Normalize the values to the range [0, 1]
-heightmap = (heightmap - np.min(heightmap)) / (np.max(heightmap) - np.min(heightmap))
+# Génération de la carte de hauteur en utilisant le bruit de Perlin
+carte_hauteur = np.zeros((largeur, hauteur))
+for i in range(largeur):
+    for j in range(hauteur):
+        carte_hauteur[i][j] = snoise2(i/echelle, j/echelle, octaves=6, persistence=0.5, lacunarity=2.0, repeatx=1024, repeaty=1024, base=graine)
 
-# Define color gradients based on elevation
-colors = [
-    (0, 0, 0.5),    # Deep water
-    (0, 0, 1),       # Shallow water
-    (0.8, 0.8, 0.2), # Beach
-    (0.2, 0.8, 0.2), # Land
-    (0.3, 0.2, 0.1), # Mountain (marron foncé)
-    (1, 1, 1)        # Snow
+# Normalisation des valeurs dans la plage [0, 1]
+carte_hauteur = (carte_hauteur - np.min(carte_hauteur)) / (np.max(carte_hauteur) - np.min(carte_hauteur))
+
+# Génération d'une carte pour les zones d'eau et de terre
+carte_eau = carte_hauteur < 0.4  # Réglage du seuil pour les zones d'eau
+carte_terre = carte_hauteur >= 0.4  # Zones de terre
+
+# Définition des gradients de couleur en fonction de l'élévation
+couleurs = [
+    (0, 0, 0.5),    # Eau profonde
+    (0, 0, 1),      # Eau peu profonde
+    (0.8, 0.8, 0.2),# Plage
+    (0.2, 0.8, 0.2),# Terre
+    (0.3, 0.2, 0.1),# Montagne (marron foncé)
+    (1, 1, 1)       # Neige
 ]
 
-# Interpolate colors based on elevation
-def interpolate_color(value, color_map):
-    value = max(0, min(1, value))
-    index = int(value * (len(color_map) - 1))
-    return np.array(color_map[index])
+# Interpolation des couleurs en fonction de l'élévation
+def interpoler_couleur(valeur, carte_couleur):
+    valeur = max(0, min(1, valeur))
+    index = int(valeur * (len(carte_couleur) - 1))
+    return np.array(carte_couleur[index])
 
-# Generate colored heightmap
-colored_heightmap = np.zeros((width, height, 3))
-for i in range(width):
-    for j in range(height):
-        colored_heightmap[i][j] = interpolate_color(heightmap[i][j], colors)
 
-# Add a beach based on elevation threshold
-beach_threshold = 0.2
-beach_color = (0.8, 0.8, 0.2)  # Color for the beach
 
-beach_mask = heightmap < beach_threshold
-colored_heightmap[beach_mask] = beach_color
 
-# Random Viking city names
-viking_city_names = ["Asgard", "Valhalla", "Niflheim", "Midgard", "Jotunheim", "Helheim", "Svartalfheim", "Alfheim", "Vanaheim", "Muspelheim", "Yggdrasil", "Ragnarok", "Bifrost", "Fenrir", "Nidavellir"]
+# Génération de la carte de couleur
+carte_couleur = np.zeros((largeur, hauteur, 3))
+for i in range(largeur):
+    for j in range(hauteur):
+        if carte_eau[i][j]:  # Si c'est de l'eau
+            carte_couleur[i][j] = interpoler_couleur(carte_hauteur[i][j], [couleurs[0], couleurs[1]])  # Choix des couleurs d'eau profonde ou peu profonde
+        else:  # Si c'est de la terre
+            carte_couleur[i][j] = interpoler_couleur(carte_hauteur[i][j], [couleurs[3], couleurs[4], couleurs[5]])  # Choix des couleurs de terre, montagne ou neige
 
-# Generate random city coordinates and names
-num_cities = 10
-city_coordinates = []
-city_names = []
+#Ajout des montagnes
+cartes_montagnes = carte_hauteur > 0.95 # Réglage du seuil pour les montagnes
 
-while len(city_coordinates) < num_cities:
-    x, y = np.random.randint(0, width), np.random.randint(0, height)
-    if not beach_mask[x, y]:  # Check if the city is not on the beach
-        city_coordinates.append((x, y))
-        city_names.append(random.choice(viking_city_names))
-        # Add a light brown point under the city
-        colored_heightmap[x, y] = (0.8, 0.6, 0.4)
+carte_couleur[cartes_montagnes]= interpoler_couleur(0.8,[couleurs[3], couleurs[4],couleurs[5]]) # couleur des montagnes
+# Ajout des plages autour des zones d'eau
+masque_eau_erode = np.pad(carte_eau, 1, mode='constant', constant_values=True)  # Ajout d'une bordure d'eau pour éviter les problèmes de bords
+masque_eau_erode = masque_eau_erode[:-2, :-2] | masque_eau_erode[1:-1, :-2] | masque_eau_erode[2:, :-2] | masque_eau_erode[:-2, 1:-1] | masque_eau_erode[2:, 1:-1] | masque_eau_erode[:-2, 2:] | masque_eau_erode[1:-1, 2:] | masque_eau_erode[2:, 2:]  # Érosion de l'eau sur les bords
+carte_plage = masque_eau_erode & carte_terre  # Intersection de l'eau érodée avec les zones de terre
+carte_couleur[carte_plage] = interpoler_couleur(0.5, [couleurs[2], couleurs[3]])  # Coloration des plages
 
-# Add city names to the plot
-for city_coord, city_name in zip(city_coordinates, city_names):
-    plt.text(city_coord[1], city_coord[0], city_name, color='black', fontsize=13, ha='center', va='center', fontfamily='cursive')
+# Ajout de la neige sur les sommets des montagnes
+carte_neige = carte_hauteur > 0.8  # Réglage du seuil pour les sommets de montagne
+carte_couleur[carte_neige] = (1, 1, 1)  # Couleur de la neige
 
-# Display the colored heightmap in 2D
-plt.imshow(colored_heightmap, origin='lower')
-plt.title(f'2D Random Map (Seed: {seed})')
+# Noms de villes vikings aléatoires
+noms_villes_vikings = ["Asgard", "Valhalla", "Niflheim", "Midgard", "Jotunheim", "Helheim", "Svartalfheim", "Alfheim", "Vanaheim", "Muspelheim", "Yggdrasil", "Ragnarok", "Bifrost", "Fenrir", "Nidavellir"]
+
+# Génération de coordonnées et de noms de villes aléatoires
+nb_villes = 10
+coordonnees_villes = set()  # Utilisation d'un ensemble pour stocker les coordonnées des villes
+noms_villes = []
+
+while len(coordonnees_villes) < nb_villes:
+    x, y = np.random.randint(20, largeur-20), np.random.randint(20, hauteur-20)  # Assure que les villes ne se situent pas trop près des bords de la carte
+    if carte_terre[x, y] and (x, y) not in coordonnees_villes:  # Vérification si la ville est sur la terre et n'est pas déjà dans la liste
+        if not np.any(carte_eau[x-10:x+11,y-10:y+11]): #vérification si la ville n'est pas trop proche de l'eau
+            coordonnees_villes.add((x, y))
+            nom_ville = random.choice(noms_villes_vikings)
+            noms_villes_vikings.remove(nom_ville)  # Supprimer le nom de ville utilisé pour éviter les répétitions
+            noms_villes.append(nom_ville)
+
+# Espacement des villes
+coordonnees_villes_esp = []
+for coordonnee in coordonnees_villes:
+    x, y = coordonnee
+    dx, dy = 0, 0
+    while any(np.linalg.norm(np.array((x+dx, y+dy)) - np.array(other)) < 30 for other in coordonnees_villes_esp):
+        dx += random.randint(-50, 50)
+        dy += random.randint(-50, 50)
+    coordonnees_villes_esp.append((x+dx, y+dy))
+
+# Sites historiques
+sites_historiques = {
+    "Ruines de Valhalla": None,
+    "Bataille de Ragnarok": None,
+    "Tombe de Yggdrasil": None,
+}
+# Attribution des coordonnées aléatoires aux sites historiques
+for nom_site in sites_historiques:
+    x, y = np.random.randint(20, largeur-20), np.random.randint(20, hauteur-20)
+    while not carte_terre[x, y]:
+        x, y = np.random.randint(20, largeur-20), np.random.randint(20, hauteur-20)
+    sites_historiques[nom_site] = (x, y)
+
+# Génération de la carte avec les sites historiques
+for nom_site, coordonnee_site in sites_historiques.items():
+    x, y = coordonnee_site
+    carte_couleur[x, y] = (1, 0, 0)  # Couleur des sites historiques
+
+# Affichage de la carte de hauteur colorée en 2D avec zoom et déplacement activés
+fig, ax = plt.subplots(figsize=(8, 6))  # Définition de la taille de la figure
+im = ax.imshow(carte_couleur, origin='lower')
+ax.axis('off')  # Suppression des indications d'échelle sur les côtés
+
+# Ajout des points noirs pour marquer les emplacements des villes
+for coordonnee_ville, nom_ville in zip(coordonnees_villes_esp, noms_villes):
+    x, y = coordonnee_ville
+    ax.plot(y, x, marker='o', markersize=8, color='black')  # Ajout du point noir pour marquer la ville
+    ax.text(y, x + 7, nom_ville, color='black', fontsize=12, ha='center', va='center', fontfamily='cursive')  # Ajout du nom de la ville au-dessus du point avec la police cursive
+
+# Ajout des points rouges pour marquer les emplacements des sites historiques
+for nom_site, coordonnee_site in sites_historiques.items():
+    x, y = coordonnee_site
+    ax.plot(y, x, marker='o', markersize=7, color='red')  # Ajout du point rouge pour marquer le site historique avec une taille de point plus grande
+    ax.text(y, x + 7, nom_site, color='red', fontsize=7, ha='center', va='center', fontfamily='cursive')  # Ajout du nom du site historique au-dessus du point avec la police cursive
+
+# Légende
+legend_elements = [
+    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='black', markersize=10, label='Villes'),
+    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='red', markersize=10, label='Sites historiques'),
+    plt.Line2D([0], [0], color='blue', linewidth=3, label='Eau'),
+    plt.Line2D([0], [0], color='green', linewidth=3, label='Terre'),
+    plt.Line2D([0], [0], color='brown', linewidth=3, label='Montagnes'),
+    plt.Line2D([0], [0], color='white', linewidth=3, label='Neige'),
+    plt.Line2D([0], [0], color='yellow', linewidth=3, label='Plages')
+]
+
+# Ajout de la légende en dehors de la carte
+fig.subplots_adjust(right=0.9)  # Ajustement des marges pour laisser de l'espace à la légende
+ax.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(-0.38, 0.8))
+
+# Echelle de couleur pour représenter l'altitude
+cax = fig.add_axes([0.8, 0.1, 0.03, 0.8])  # Définition de la position et de la taille de l'échelle de couleur
+norm = plt.Normalize(vmin=0, vmax=2)  # Normalisation de l'altitude entre 0 et 1
+cbar = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap='terrain'), cax=cax)  # Ajout de l'échelle de couleur
+cbar.set_label('Altitude')  # Ajout du label à l'échelle de couleur
+cbar.set_ticks([0, 0.2, 0.4, 0.6, 0.8, 2])  # Définition des valeurs de l'altitude pour les étiquettes
+cbar.ax.invert_yaxis()  # Inversion de l'axe y pour que les valeurs croissent vers le haut
+
 plt.show()
