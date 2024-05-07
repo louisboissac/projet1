@@ -4,11 +4,11 @@ from noise import snoise2
 import random
 
 # Définition de la taille de la carte en hauteur et en largeur
-largeur = 200
-hauteur = 200
+largeur = 300
+hauteur = 300
 
 # Définition de l'échelle du bruit (affecte le niveau de détail)
-echelle = 125.0
+echelle = 150.0
 
 # Définition d'une graine aléatoire pour la génération du bruit
 graine = random.randint(0, 1000000)
@@ -24,18 +24,20 @@ for i in range(largeur):
 # Normalisation des valeurs dans la plage [0, 1]
 carte_hauteur = (carte_hauteur - np.min(carte_hauteur)) / (np.max(carte_hauteur) - np.min(carte_hauteur))
 
-# Génération d'une carte pour les zones d'eau et de terre
-carte_eau = carte_hauteur < 0.3  # Réglage du seuil pour les zones d'eau
-carte_terre = carte_hauteur >= 0.3  # Zones de terre
+# Génération d'une carte pour les zones d'eau, de plaines, de forêts et de montagnes
+carte_eau = carte_hauteur < 0.35  # Réglage du seuil pour les zones d'eau
+carte_plaine = (carte_hauteur >= 0.35) & (carte_hauteur < 0.525)  # Zones de plaines
+carte_foret = (carte_hauteur >= 0.4) & (carte_hauteur < 0.65)  # Zones de forêts
+carte_montagne = carte_hauteur >= 0.65  # Zones de montagnes
 
 # Définition des gradients de couleur en fonction de l'élévation
 couleurs = [
     (0, 0, 0.5),    # Eau profonde
     (0, 0, 1),      # Eau peu profonde
     (0.8, 0.8, 0.2),# Plage
-    (0.2, 0.8, 0.2),# Terre
-    (0.3, 0.2, 0.1),# Montagne (marron foncé)
-    (1, 1, 1)       # Neige
+    (0.2, 0.8, 0.2),# Plaine (vert clair)
+    (0, 0.5, 0),     # Forêt (vert foncé)
+    (0.3, 0.2, 0.1)  # Montagne (marron foncé)
 ]
 
 # Interpolation des couleurs en fonction de l'élévation
@@ -50,18 +52,18 @@ for i in range(largeur):
     for j in range(hauteur):
         if carte_eau[i][j]:  # Si c'est de l'eau
             carte_couleur[i][j] = interpoler_couleur(carte_hauteur[i][j], [couleurs[0], couleurs[1]])  # Choix des couleurs d'eau profonde ou peu profonde
-        else:  # Si c'est de la terre
-            carte_couleur[i][j] = interpoler_couleur(carte_hauteur[i][j], [couleurs[3], couleurs[4], couleurs[5]])  # Choix des couleurs de terre, montagne ou neige
+        elif carte_plaine[i][j]:  # Si c'est une plaine
+            carte_couleur[i][j] = couleurs[3]  # Vert clair pour les plaines
+        elif carte_foret[i][j]:  # Si c'est une forêt
+            carte_couleur[i][j] = couleurs[4]  # Vert foncé pour les forêts
+        elif carte_montagne[i][j]:  # Si c'est une montagne
+            carte_couleur[i][j] = couleurs[5]  # Marron foncé pour les montagnes
 
 # Ajout des plages autour des zones d'eau
 masque_eau_erode = np.pad(carte_eau, 1, mode='constant', constant_values=True)  # Ajout d'une bordure d'eau pour éviter les problèmes de bords
 masque_eau_erode = masque_eau_erode[:-2, :-2] | masque_eau_erode[1:-1, :-2] | masque_eau_erode[2:, :-2] | masque_eau_erode[:-2, 1:-1] | masque_eau_erode[2:, 1:-1] | masque_eau_erode[:-2, 2:] | masque_eau_erode[1:-1, 2:] | masque_eau_erode[2:, 2:]  # Érosion de l'eau sur les bords
-carte_plage = masque_eau_erode & carte_terre  # Intersection de l'eau érodée avec les zones de terre
+carte_plage = masque_eau_erode & carte_plaine  # Intersection de l'eau érodée avec les zones de plaine
 carte_couleur[carte_plage] = interpoler_couleur(0.5, [couleurs[2], couleurs[3]])  # Coloration des plages
-
-# Ajout de la neige sur les sommets des montagnes
-carte_neige = carte_hauteur > 0.8  # Réglage du seuil pour les sommets de montagne
-carte_couleur[carte_neige] = (1, 1, 1)  # Couleur de la neige
 
 # Noms de villes vikings aléatoires
 noms_villes_vikings = ["Asgard", "Valhalla", "Niflheim", "Midgard", "Jotunheim", "Helheim", "Svartalfheim", "Alfheim", "Vanaheim", "Muspelheim", "Yggdrasil", "Ragnarok", "Bifrost", "Fenrir", "Nidavellir"]
@@ -73,9 +75,11 @@ noms_villes = []
 
 while len(coordonnees_villes) < nb_villes:
     x, y = np.random.randint(20, largeur-20), np.random.randint(20, hauteur-20)  # Assure que les villes ne se situent pas trop près des bords de la carte
-    if carte_terre[x, y] and (x, y) not in coordonnees_villes:  # Vérification si la ville est sur la terre et n'est pas déjà dans la liste
+    if carte_plaine[x, y] and (x, y) not in coordonnees_villes:  # Vérification si la ville est sur une plaine et n'est pas déjà dans la liste
         coordonnees_villes.add((x, y))
-        noms_villes.append(random.choice(noms_villes_vikings))
+        nom_ville = random.choice(noms_villes_vikings)
+        noms_villes_vikings.remove(nom_ville)  # Supprimer le nom de ville utilisé pour éviter les répétitions
+        noms_villes.append(nom_ville)
 
 # Espacement des villes
 coordonnees_villes_esp = []
@@ -89,10 +93,16 @@ for coordonnee in coordonnees_villes:
 
 # Sites historiques
 sites_historiques = {
-    "Ruines de Valhalla": (60, 140),
-    "Bataille de Ragnarok": (100, 50),
-    "Tombe de Yggdrasil": (160, 100)
+    "Ruines de Valhalla": None,
+    "Bataille de Ragnarok": None,
+    "Tombe de Yggdrasil": None,
 }
+# Attribution des coordonnées aléatoires aux sites historiques
+for nom_site in sites_historiques:
+    x, y = np.random.randint(20, largeur-20), np.random.randint(20, hauteur-20)
+    while not carte_plaine[x, y]:
+        x, y = np.random.randint(20, largeur-20), np.random.randint(20, hauteur-20)
+    sites_historiques[nom_site] = (x, y)
 
 # Génération de la carte avec les sites historiques
 for nom_site, coordonnee_site in sites_historiques.items():
@@ -100,20 +110,40 @@ for nom_site, coordonnee_site in sites_historiques.items():
     carte_couleur[x, y] = (1, 0, 0)  # Couleur des sites historiques
 
 # Affichage de la carte de hauteur colorée en 2D avec zoom et déplacement activés
-plt.figure(figsize=(8, 6))  # Définition de la taille de la figure
-plt.imshow(carte_couleur, origin='lower')
-plt.axis('off')  # Suppression des indications d'échelle sur les côtés
+fig, ax = plt.subplots(figsize=(8, 6))  # Définition de la taille de la figure
+im = ax.imshow(carte_couleur, origin='lower')
+ax.axis('off')  # Suppression des indications d'échelle sur les côtés
 
 # Ajout des points noirs pour marquer les emplacements des villes
 for coordonnee_ville, nom_ville in zip(coordonnees_villes_esp, noms_villes):
     x, y = coordonnee_ville
-    plt.plot(y, x, marker='o', markersize=8, color='black')  # Ajout du point noir pour marquer la ville
-    plt.text(y, x + 7, nom_ville, color='black', fontsize=12, ha='center', va='center', fontfamily='cursive')  # Ajout du nom de la ville au-dessus du point avec la police cursive
+    ax.plot(y, x, marker='o', markersize=8, color='black')  # Ajout du point noir pour marquer la ville
+    ax.text(y, x + 7, nom_ville, color='black', fontsize=12, ha='center', va='center', fontfamily='cursive')  # Ajout du nom de la ville au-dessus du point avec la police cursive
 
 # Ajout des points rouges pour marquer les emplacements des sites historiques
 for nom_site, coordonnee_site in sites_historiques.items():
     x, y = coordonnee_site
-    plt.plot(y, x, marker='o', markersize=7, color='red')  # Ajout du point rouge pour marquer le site historique avec une taille de point plus grande
-    plt.text(y, x + 7, nom_site, color='red', fontsize=7, ha='center', va='center', fontfamily='cursive')  # Ajout du nom du site historique au-dessus du point avec la police cursive
+    ax.plot(y, x, marker='o', markersize=7, color='red')  # Ajout du point rouge pour marquer le site historique avec une taille de point plus grande
+    ax.text(y, x + 7, nom_site, color='red', fontsize=7, ha='center', va='center', fontfamily='cursive')  # Ajout du nom du site historique au-dessus du point avec la police cursive
+
+# Légende
+legend_elements = [
+    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='black', markersize=10, label='Villes'),
+    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='red', markersize=10, label='Sites historiques'),
+    plt.Line2D([0], [0], color='blue', linewidth=3, label='Eau'),
+    plt.Line2D([0], [0], color='green', linewidth=3, label='Plaine'),
+    plt.Line2D([0], [0], color='green', linewidth=3, label='Forêt'),  # Ajout de la légende pour les forêts
+    plt.Line2D([0], [0], color='brown', linewidth=3, label='Montagne')
+]
+
+# Ajout de la légende en dehors de la carte
+fig.subplots_adjust(right=0.9)  # Ajustement des marges pour laisser de l'espace à la légende
+ax.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(-0.38, 0.8))
+
+# Echelle de couleur pour représenter l'altitude
+cax = fig.add_axes([0.8, 0.1, 0.03, 0.8])  # Définition de la position et de la taille de l'échelle de couleur
+norm = plt.Normalize(vmin=0, vmax=1)  # Normalisation de l'altitude entre 0 et 1
+cbar = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap='terrain'), cax=cax)  # Ajout de l'échelle de couleur
+cbar.set_label('Altitude')  # Ajout du label à l'échelle de couleur
 
 plt.show()
