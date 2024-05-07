@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from noise import snoise2
 import random
 
+
 # Définition de la taille de la carte en hauteur et en largeur
 largeur = 300
 hauteur = 300
@@ -135,6 +136,14 @@ legend_elements = [
     plt.Line2D([0], [0], color='yellow', linewidth=3, label='Plages')
 ]
 
-ax.legend(handles=legend_elements, loc='upper right')
+# Ajout de la légende en dehors de la carte
+fig.subplots_adjust(right=0.9)  # Ajustement des marges pour laisser de l'espace à la légende
+ax.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(-0.38, 0.8))
+
+# Echelle de couleur pour représenter l'altitude
+cax = fig.add_axes([0.8, 0.1, 0.03, 0.8])  # Définition de la position et de la taille de l'échelle de couleur
+norm = plt.Normalize(vmin=0, vmax=1)  # Normalisation de l'altitude entre 0 et 1
+cbar = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap='terrain'), cax=cax)  # Ajout de l'échelle de couleur
+cbar.set_label('Altitude')  # Ajout du label à l'échelle de couleur
 
 plt.show()
