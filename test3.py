@@ -26,8 +26,8 @@ for i in range(largeur):
 carte_hauteur = (carte_hauteur - np.min(carte_hauteur)) / (np.max(carte_hauteur) - np.min(carte_hauteur))
 
 # Génération d'une carte pour les zones d'eau et de terre
-carte_eau = carte_hauteur < 0.4  # Réglage du seuil pour les zones d'eau
-carte_terre = carte_hauteur >= 0.4  # Zones de terre
+carte_eau = carte_hauteur < 0.3  # Réglage du seuil pour les zones d'eau
+carte_terre = carte_hauteur >= 0.3  # Zones de terre
 
 # Définition des gradients de couleur en fonction de l'élévation
 couleurs = [
@@ -45,9 +45,6 @@ def interpoler_couleur(valeur, carte_couleur):
     index = int(valeur * (len(carte_couleur) - 1))
     return np.array(carte_couleur[index])
 
-
-
-
 # Génération de la carte de couleur
 carte_couleur = np.zeros((largeur, hauteur, 3))
 for i in range(largeur):
@@ -57,10 +54,6 @@ for i in range(largeur):
         else:  # Si c'est de la terre
             carte_couleur[i][j] = interpoler_couleur(carte_hauteur[i][j], [couleurs[3], couleurs[4], couleurs[5]])  # Choix des couleurs de terre, montagne ou neige
 
-#Ajout des montagnes
-cartes_montagnes = carte_hauteur > 0.95 # Réglage du seuil pour les montagnes
-
-carte_couleur[cartes_montagnes]= interpoler_couleur(0.8,[couleurs[3], couleurs[4],couleurs[5]]) # couleur des montagnes
 # Ajout des plages autour des zones d'eau
 masque_eau_erode = np.pad(carte_eau, 1, mode='constant', constant_values=True)  # Ajout d'une bordure d'eau pour éviter les problèmes de bords
 masque_eau_erode = masque_eau_erode[:-2, :-2] | masque_eau_erode[1:-1, :-2] | masque_eau_erode[2:, :-2] | masque_eau_erode[:-2, 1:-1] | masque_eau_erode[2:, 1:-1] | masque_eau_erode[:-2, 2:] | masque_eau_erode[1:-1, 2:] | masque_eau_erode[2:, 2:]  # Érosion de l'eau sur les bords
@@ -82,11 +75,10 @@ noms_villes = []
 while len(coordonnees_villes) < nb_villes:
     x, y = np.random.randint(20, largeur-20), np.random.randint(20, hauteur-20)  # Assure que les villes ne se situent pas trop près des bords de la carte
     if carte_terre[x, y] and (x, y) not in coordonnees_villes:  # Vérification si la ville est sur la terre et n'est pas déjà dans la liste
-        if not np.any(carte_eau[x-10:x+11,y-10:y+11]): #vérification si la ville n'est pas trop proche de l'eau
-            coordonnees_villes.add((x, y))
-            nom_ville = random.choice(noms_villes_vikings)
-            noms_villes_vikings.remove(nom_ville)  # Supprimer le nom de ville utilisé pour éviter les répétitions
-            noms_villes.append(nom_ville)
+        coordonnees_villes.add((x, y))
+        nom_ville = random.choice(noms_villes_vikings)
+        noms_villes_vikings.remove(nom_ville)  # Supprimer le nom de ville utilisé pour éviter les répétitions
+        noms_villes.append(nom_ville)
 
 # Espacement des villes
 coordonnees_villes_esp = []
@@ -150,10 +142,8 @@ ax.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(-0.38, 0.8
 
 # Echelle de couleur pour représenter l'altitude
 cax = fig.add_axes([0.8, 0.1, 0.03, 0.8])  # Définition de la position et de la taille de l'échelle de couleur
-norm = plt.Normalize(vmin=0, vmax=2)  # Normalisation de l'altitude entre 0 et 1
+norm = plt.Normalize(vmin=0, vmax=1)  # Normalisation de l'altitude entre 0 et 1
 cbar = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap='terrain'), cax=cax)  # Ajout de l'échelle de couleur
 cbar.set_label('Altitude')  # Ajout du label à l'échelle de couleur
-cbar.set_ticks([0, 0.2, 0.4, 0.6, 0.8, 2])  # Définition des valeurs de l'altitude pour les étiquettes
-cbar.ax.invert_yaxis()  # Inversion de l'axe y pour que les valeurs croissent vers le haut
 
 plt.show()
