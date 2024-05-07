@@ -93,9 +93,8 @@ for coordonnee in coordonnees_villes:
 sites_historiques = {
     "Ruines de Valhalla": None,
     "Bataille de Ragnarok": None,
-    "Tombe de Yggdrasil": None
+    "Tombe de Yggdrasil": None,
 }
-
 # Attribution des coordonnées aléatoires aux sites historiques
 for nom_site in sites_historiques:
     x, y = np.random.randint(20, largeur-20), np.random.randint(20, hauteur-20)
@@ -109,20 +108,33 @@ for nom_site, coordonnee_site in sites_historiques.items():
     carte_couleur[x, y] = (1, 0, 0)  # Couleur des sites historiques
 
 # Affichage de la carte de hauteur colorée en 2D avec zoom et déplacement activés
-plt.figure(figsize=(8, 6))  # Définition de la taille de la figure
-plt.imshow(carte_couleur, origin='lower')
-plt.axis('off')  # Suppression des indications d'échelle sur les côtés
+fig, ax = plt.subplots(figsize=(8, 6))  # Définition de la taille de la figure
+im = ax.imshow(carte_couleur, origin='lower')
+ax.axis('off')  # Suppression des indications d'échelle sur les côtés
 
 # Ajout des points noirs pour marquer les emplacements des villes
 for coordonnee_ville, nom_ville in zip(coordonnees_villes_esp, noms_villes):
     x, y = coordonnee_ville
-    plt.plot(y, x, marker='o', markersize=8, color='black')  # Ajout du point noir pour marquer la ville
-    plt.text(y, x + 7, nom_ville, color='black', fontsize=12, ha='center', va='center', fontfamily='cursive')  # Ajout du nom de la ville au-dessus du point avec la police cursive
+    ax.plot(y, x, marker='o', markersize=8, color='black')  # Ajout du point noir pour marquer la ville
+    ax.text(y, x + 7, nom_ville, color='black', fontsize=12, ha='center', va='center', fontfamily='cursive')  # Ajout du nom de la ville au-dessus du point avec la police cursive
 
 # Ajout des points rouges pour marquer les emplacements des sites historiques
 for nom_site, coordonnee_site in sites_historiques.items():
     x, y = coordonnee_site
-    plt.plot(y, x, marker='o', markersize=7, color='red')  # Ajout du point rouge pour marquer le site historique avec une taille de point plus grande
-    plt.text(y, x + 7, nom_site, color='red', fontsize=7, ha='center', va='center', fontfamily='cursive')  # Ajout du nom du site historique au-dessus du point avec la police cursive
+    ax.plot(y, x, marker='o', markersize=7, color='red')  # Ajout du point rouge pour marquer le site historique avec une taille de point plus grande
+    ax.text(y, x + 7, nom_site, color='red', fontsize=7, ha='center', va='center', fontfamily='cursive')  # Ajout du nom du site historique au-dessus du point avec la police cursive
+
+# Légende
+legend_elements = [
+    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='black', markersize=10, label='Villes'),
+    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='red', markersize=10, label='Sites historiques'),
+    plt.Line2D([0], [0], color='blue', linewidth=3, label='Eau'),
+    plt.Line2D([0], [0], color='green', linewidth=3, label='Terre'),
+    plt.Line2D([0], [0], color='brown', linewidth=3, label='Montagnes'),
+    plt.Line2D([0], [0], color='white', linewidth=3, label='Neige'),
+    plt.Line2D([0], [0], color='yellow', linewidth=3, label='Plages')
+]
+
+ax.legend(handles=legend_elements, loc='upper right')
 
 plt.show()
