@@ -37,7 +37,8 @@ couleurs = [
     (0.8, 0.8, 0.2),# Plage
     (0.2, 0.8, 0.2),# Plaine (vert clair)
     (0, 0.5, 0),     # Forêt (vert foncé)
-    (0.3, 0.2, 0.1)  # Montagne (marron foncé)
+    (0.3, 0.2, 0.1), # Montagne (marron foncé)
+    (1, 1, 1)        # Neige (blanc)
 ]
 
 # Interpolation des couleurs en fonction de l'élévation
@@ -58,6 +59,8 @@ for i in range(largeur):
             carte_couleur[i][j] = couleurs[4]  # Vert foncé pour les forêts
         elif carte_montagne[i][j]:  # Si c'est une montagne
             carte_couleur[i][j] = couleurs[5]  # Marron foncé pour les montagnes
+            if carte_hauteur[i][j] > 0.85:  # Ajoutez de la neige pour les zones de montagnes élevées
+                carte_couleur[i][j] = couleurs[6]  # Neige
 
 # Ajout des plages autour des zones d'eau
 masque_eau_erode = np.pad(carte_eau, 1, mode='constant', constant_values=True)  # Ajout d'une bordure d'eau pour éviter les problèmes de bords
@@ -75,11 +78,12 @@ noms_villes = []
 
 while len(coordonnees_villes) < nb_villes:
     x, y = np.random.randint(20, largeur-20), np.random.randint(20, hauteur-20)  # Assure que les villes ne se situent pas trop près des bords de la carte
-    if carte_plaine[x, y] and (x, y) not in coordonnees_villes:  # Vérification si la ville est sur une plaine et n'est pas déjà dans la liste
+    if carte_plaine[x, y] and not carte_eau[x, y] and (x, y) not in coordonnees_villes:  # Vérification si la ville est sur une plaine, n'est pas dans l'eau et n'est pas déjà dans la liste
         coordonnees_villes.add((x, y))
         nom_ville = random.choice(noms_villes_vikings)
         noms_villes_vikings.remove(nom_ville)  # Supprimer le nom de ville utilisé pour éviter les répétitions
         noms_villes.append(nom_ville)
+
 
 # Espacement des villes
 coordonnees_villes_esp = []
@@ -132,8 +136,9 @@ legend_elements = [
     plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='red', markersize=10, label='Sites historiques'),
     plt.Line2D([0], [0], color='blue', linewidth=3, label='Eau'),
     plt.Line2D([0], [0], color='green', linewidth=3, label='Plaine'),
-    plt.Line2D([0], [0], color='green', linewidth=3, label='Forêt'),  # Ajout de la légende pour les forêts
-    plt.Line2D([0], [0], color='brown', linewidth=3, label='Montagne')
+    plt.Line2D([0], [0], color='green', linewidth=3, label='Forêt'),
+    plt.Line2D([0], [0], color='brown', linewidth=3, label='Montagne'),
+    plt.Line2D([0], [0], color='white', linewidth=3, label='Neige')  # Ajout de la légende pour la neige
 ]
 
 # Ajout de la légende en dehors de la carte
