@@ -2,9 +2,9 @@ import psycopg2
 
 # Connectez-vous à la base de données
 conn = psycopg2.connect(
-    dbname="nom_de_la_base_de_donnees",
-    user="nom_d_utilisateur",
-    password="mot_de_passe",
+    dbname="MapBase",
+    user="Carte_fictif",
+    password="Mapcarte",
     host="localhost"
 )
 
