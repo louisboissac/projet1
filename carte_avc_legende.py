@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from noise import snoise2
 import random
+from PIL import Image
 
 # Définition de la taille de la carte en hauteur et en largeur
 largeur = 300
@@ -77,9 +78,9 @@ coordonnees_villes = set()  # Utilisation d'un ensemble pour stocker les coordon
 noms_villes = []
 
 while len(coordonnees_villes) < nb_villes:
-    x, y = np.random.randint(0, largeur), np.random.randint(0, hauteur)  # Assure que les villes ne se situent pas trop près des bords de la carte
+    x, y = np.random.randint(10, largeur-10), np.random.randint(10, hauteur-10)  # Assure que les villes ne se situent pas trop près des bords de la carte
     if carte_plaine[x, y] and (x, y) not in coordonnees_villes:  # Vérification si la ville est sur une plaine et n'est pas déjà dans la liste
-        if not np.any(carte_eau[x - 10:x + 11, y - 10:y + 11]):  # vérification si la ville n'est pas trop proche de l'eau
+        if not np.any(carte_eau[x - 15:x + 16, y - 15:y + 16]):  # vérification si la ville n'est pas trop proche de l'eau
             coordonnees_villes.add((x, y))
             nom_ville = random.choice(noms_villes_vikings)
             noms_villes_vikings.remove(nom_ville)  # Supprimer le nom de ville utilisé pour éviter les répétitions
@@ -113,6 +114,15 @@ for nom_site, coordonnee_site in sites_historiques.items():
     x, y = coordonnee_site
     carte_couleur[x, y] = (1, 0, 0)  # Couleur des sites historiques
 
+# Ajout de l'image de hache pour la bataille de Ragnarok
+if "Bataille de Ragnarok" in sites_historiques:
+    x, y = sites_historiques["Bataille de Ragnarok"]
+    image_hache = Image.open("/Users/mathieusin/revision_exam/hache.png")  # Ouvrir l'image de hache
+    taille_zone = (31,31)
+    image_hache = image_hache.resize(taille_zone)  # Redimensionner l'image de hache
+    image_hache = np.array(image_hache)  # Convertir l'image de hache en tableau NumPy
+    carte_couleur[x-15:x+16, y-15:y+16] = image_hache  # Coller l'image de hache sur la carte
+
 # Affichage de la carte de hauteur colorée en 2D avec zoom et déplacement activés
 fig, ax = plt.subplots(figsize=(8, 6))  # Définition de la taille de la figure
 im = ax.imshow(carte_couleur, origin='lower')
@@ -122,15 +132,15 @@ ax.axis('off')  # Suppression des indications d'échelle sur les côtés
 for coordonnee_ville, nom_ville in zip(coordonnees_villes_esp, noms_villes):
     x, y = coordonnee_ville
     if 0 <= x < largeur and 0 <= y < hauteur:  # Vérification que les coordonnées de la ville sont dans les limites de la carte
-        ax.plot(y, x, marker='o', markersize=8, color='black')  # Ajout du point noir pour marquer la ville
-        ax.text(y, x + 7, nom_ville, color='black', fontsize=12, ha='center', va='center', fontfamily='cursive')  # Ajout du nom de la ville au-dessus du point avec la police cursive
+        ax.plot(y, x, marker='o', markersize=7, color='black')  # Ajout du point noir pour marquer la ville
+        ax.text(y, x + 7, nom_ville, color='black', fontsize=10, ha='center', va='center', fontfamily='cursive')  # Ajout du nom de la ville au-dessus du point avec la police cursive
 
 # Ajout des points rouges pour marquer les emplacements des sites historiques
 for nom_site, coordonnee_site in sites_historiques.items():
     x, y = coordonnee_site
     if 0 <= x < largeur and 0 <= y < hauteur:  # Vérification que les coordonnées du site historique sont dans les limites de la carte
-        ax.plot(y, x, marker='o', markersize=7, color='red')  # Ajout du point rouge pour marquer le site historique avec une taille de point plus grande
-        ax.text(y, x + 7, nom_site, color='red', fontsize=7, ha='center', va='center', fontfamily='cursive')  # Ajout du nom du site historique au-dessus du point avec la police cursive
+        ax.plot(y, x, marker='o', markersize=5, color='red')  # Ajout du point rouge pour marquer le site historique avec une taille de point plus grande
+        ax.text(y, x + 7, nom_site, color='red', fontsize=8, ha='center', va='center', fontfamily='cursive')  # Ajout du nom du site historique au-dessus du point avec la police cursive
 
 # Légende
 legend_elements = [
@@ -153,8 +163,8 @@ cax = fig.add_axes([0.8, 0.1, 0.03, 0.8])  # Définition de la position et de la
 norm = plt.Normalize(vmin=0, vmax=2)  # Normalisation de l'altitude entre 0 et 2
 cbar = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap='terrain'), cax=cax)  # Ajout de l'échelle de couleur
 cbar.set_label('Altitude')  # Ajout du label à l'échelle de couleur
-cbar.set_ticks([0, 0.2, 0.4, 0.6, 0.8, 2])  # Définition des valeurs de l'altitude pour les étiquettes
-cbar.ax.invert_yaxis()  # Inversion de l'axe y pour que les valeurs croissent vers le haut
+cbar.set_ticks([2, 0.8, 0.6, 0.4, 0.2, 0])  # Définition des valeurs de l'altitude pour les étiquettes
+
 
 
 plt.show()
