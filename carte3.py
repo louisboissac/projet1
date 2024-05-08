@@ -68,32 +68,31 @@ masque_eau_erode = masque_eau_erode[:-2, :-2] | masque_eau_erode[1:-1, :-2] | ma
 carte_plage = masque_eau_erode & carte_plaine  # Intersection de l'eau érodée avec les zones de plaine
 carte_couleur[carte_plage] = interpoler_couleur(0.5, [couleurs[2], couleurs[3]])  # Coloration des plages
 
-# Noms de villes vikings aléatoires
+# Définition des noms de villes vikings aléatoires
 noms_villes_vikings = ["Asgard", "Valhalla", "Niflheim", "Midgard", "Jotunheim", "Helheim", "Svartalfheim", "Alfheim", "Vanaheim", "Muspelheim", "Yggdrasil", "Ragnarok", "Bifrost", "Fenrir", "Nidavellir"]
 
 # Génération de coordonnées et de noms de villes aléatoires
 nb_villes = 13
-coordonnees_villes = set()  # Utilisation d'un ensemble pour stocker les coordonnées des villes
+coordonnees_villes_esp = set()  # Utilisation d'un ensemble pour stocker les coordonnées espacées des villes
 noms_villes = []
 
-while len(coordonnees_villes) < nb_villes:
+def check_overlap(pos1, pos2, text_width=10, text_height=5):
+    """Vérifie si deux éléments se superposent."""
+    x1, y1 = pos1
+    x2, y2 = pos2
+    return not (x1 + text_width < x2 or x2 + text_width < x1 or y1 + text_height < y2 or y2 + text_height < y1)
+
+while len(coordonnees_villes_esp) < nb_villes:
     x, y = np.random.randint(10, largeur-10), np.random.randint(10, hauteur-10)  # Assure que les villes ne se situent pas trop près des bords de la carte
     if 10 <= x < largeur - 10 and 10 <= y < hauteur - 10:  # Vérification si les coordonnées sont à l'intérieur de la carte
-        if carte_plaine[x, y] and not carte_eau[x, y] and (x, y) not in coordonnees_villes:  # Vérification si la ville est sur une plaine, n'est pas dans l'eau et n'est pas déjà dans la liste
-            coordonnees_villes.add((x, y))
-            nom_ville = random.choice(noms_villes_vikings)
-            noms_villes_vikings.remove(nom_ville)  # Supprimer le nom de ville utilisé pour éviter les répétitions
-            noms_villes.append(nom_ville)
-
-# Espacement des villes
-coordonnees_villes_esp = []
-for coordonnee in coordonnees_villes:
-    x, y = coordonnee
-    dx, dy = 0, 0
-    while any(np.linalg.norm(np.array((x+dx, y+dy)) - np.array(other)) < 30 for other in coordonnees_villes_esp):
-        dx += random.randint(-50, 50)
-        dy += random.randint(-50, 50)
-    coordonnees_villes_esp.append((x+dx, y+dy))
+        if carte_plaine[x, y] and not carte_eau[x, y] and (x, y) not in coordonnees_villes_esp:  # Vérification si la ville est sur une plaine, n'est pas dans l'eau et n'est pas déjà dans la liste
+            # Vérification des zones d'exclusion autour de la ville
+            exclusion_zone = set((x+i, y+j) for i in range(-15, 16) for j in range(-15, 16))
+            if not coordonnees_villes_esp.intersection(exclusion_zone):  # Si aucune intersection avec les villes déjà placées
+                coordonnees_villes_esp.add((x, y))
+                nom_ville = random.choice(noms_villes_vikings)
+                noms_villes_vikings.remove(nom_ville)  # Supprimer le nom de ville utilisé pour éviter les répétitions
+                noms_villes.append((nom_ville, (x, y)))
 
 # Sites historiques
 sites_historiques = {
@@ -102,14 +101,28 @@ sites_historiques = {
     "Tombe de Yggdrasil": None,
     "Autel de Thor": None,
     "Grotte de Fenrir": None,
-
 }
-# Attribution des coordonnées aléatoires aux sites historiques
+
+# Attribution des coordonnées aléatoires aux sites historiques sans chevauchement
 for nom_site in sites_historiques:
     x, y = np.random.randint(20, largeur-20), np.random.randint(20, hauteur-20)
-    while not carte_plaine[x, y]:
+    while not carte_plaine[x, y] or any(np.linalg.norm(np.array((x, y)) - np.array(site)) < 30 for site in coordonnees_villes_esp) or any(site is not None and np.linalg.norm(np.array((x, y)) - np.array(site)) < 30 for site in sites_historiques.values()):
         x, y = np.random.randint(20, largeur-20), np.random.randint(20, hauteur-20)
     sites_historiques[nom_site] = (x, y)
+
+# Ajustement des positions pour éviter le chevauchement des noms de villes et de sites historiques
+for i in range(len(noms_villes)):
+    name1, pos1 = noms_villes[i]
+    for j in range(i + 1, len(noms_villes)):
+        name2, pos2 = noms_villes[j]
+        if check_overlap(pos1, pos2):
+            noms_villes[j] = (name2, (pos2[0], pos2[1] + 5))
+
+for nom_site1, pos_site1 in sites_historiques.items():
+    for nom_site2, pos_site2 in sites_historiques.items():
+        if nom_site1 != nom_site2 and check_overlap(pos_site1, pos_site2):
+            x, y = pos_site2
+            sites_historiques[nom_site2] = (x, y + 5)
 
 # Génération de la carte avec les sites historiques
 for nom_site, coordonnee_site in sites_historiques.items():
@@ -122,7 +135,7 @@ im = ax.imshow(carte_couleur, origin='lower')
 ax.axis('off')  # Suppression des indications d'échelle sur les côtés
 
 # Ajout des points noirs pour marquer les emplacements des villes
-for coordonnee_ville, nom_ville in zip(coordonnees_villes_esp, noms_villes):
+for nom_ville, coordonnee_ville in noms_villes:
     x, y = coordonnee_ville
     if 0 <= x < largeur and 0 <= y < hauteur:  # Vérification que les coordonnées de la ville sont dans les limites de la carte
         ax.plot(y, x, marker='o', markersize=5, color='black')  # Ajout du point noir pour marquer la ville
