@@ -1,0 +1,20 @@
+.ville {  /* Style de base pour les villes */
+    width: 5px;
+    height: 5px;
+    background-color: black;
+    border-radius: 50%;
+    position: absolute;
+  }
+  
+  .eau {  /* Style de base pour l'eau */
+    background-color: royalblue;
+  }
+  
+  .foret {  /* Style de base pour la forêt */
+    background-color: darkgreen;
+  }
+  
+  .montagne {  /* Style de base pour les montagnes */
+    background-color: brown;
+  }
+  
