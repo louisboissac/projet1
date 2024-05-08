@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte des Vikings Personnalisée</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div id="carte-container">
+        <div id="carte"></div> </div>
+
+    <div id="panneau-options"> <h2>Options</h2>
+        <form id="form-options">
+            <label for="type-carte">Type de carte:</label>
+            <select id="type-carte">
+                <option value="topographique">Topographique</option>
+                <option value="routiere">Routière</option>
+                <option value="satellite">Satellite</option>
+                <option value="vide">Vide</option>
+            </select>
+
+            <label for="relief">Relief:</label>
+            <select id="relief">
+                <option value="plat">Plat</option>
+                <option value="vallonne">Vallonné</option>
+                <option value="montagneux">Montagneux</option>
+            </select>
+
+            <label for="ressources-naturelles">Ressources naturelles:</label>
+            <input type="checkbox" id="rivieres" name="ressources-naturelles" value="rivieres">
+            <label for="rivieres">Rivières</label>
+            <input type="checkbox" id="lacs" name="ressources-naturelles" value="lacs">
+            <label for="lacs">Lacs</label>
+            <input type="checkbox" id="forets" name="ressources-naturelles" value="forets">
+            <label for="forets">Forêts</label>
+
+            <h2>Éléments culturels</h2>
+            <button id="ajouter-ville">Ajouter une ville</button> <input type="text" id="nom-ville" placeholder="Nom de la ville">
+            <input type="number" id="latitude-ville" placeholder="Latitude">
+            <input type="number" id="longitude-ville" placeholder="Longitude">
+
+            <button id="ajouter-route">Ajouter une route</button> <input type="text" id="points-route" placeholder="Liste de points (lat,lon)">
+
+            <h2>Autres</h2>
+            <label for="palette-couleurs">Palette de couleurs:</label>
+            <select id="palette-couleurs">
+                <option value="par_default">Par défaut</option>
+                <option value="bleue">Bleue</option>
+                <option value="verte">Verte</option>
+                <option value="brune">Brune</option>
+            </select>
+
+            <button id="generer-carte">Générer la carte</button>
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
