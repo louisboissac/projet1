@@ -15,9 +15,9 @@ def index():
 
         carte_image = generate_map(taille_carte, niv_eau, niv_montagne, niv_plaine, niv_foret, nombre_villes)
 
-        return render_template('interface3.html', carte_image=carte_image)
+        return render_template('interface2.html', carte_image=carte_image)
     else:
-        return render_template('interface3.html')
+        return render_template('interface2.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -30,14 +30,18 @@ def generate_map(taille_carte,niv_eau,niv_montagne,niv_plaine,niv_foret,nombre_v
     carte_eau = np.zeros((largeur, hauteur))  # Initialisation de la carte d'eau
     seuil_eau = niv_eau  # Réglage du seuil pour les zones d'eau
     carte_eau[carte_hauteur < seuil_eau] = 1  # Marquage des zones d'eau
+
     carte_plaine = np.zeros((largeur, hauteur))  # Initialisation de la carte de plaines
-    carte_plaine[carte_hauteur >= seuil_eau] = 1  # Marquage des zones de plaines
+    seuil_plaine = niv_plaine  # Réglage du seuil pour les zones de plaines
+    carte_plaine[(carte_hauteur >= seuil_eau) & (carte_hauteur < seuil_plaine)] = 1  # Marquage des zones de plaines
+
     carte_foret = np.zeros((largeur, hauteur))  # Initialisation de la carte de forêts
     seuil_foret = niv_foret  # Réglage du seuil pour les zones de forêt
-    carte_foret[carte_hauteur >= seuil_foret] = 1  # Marquage des zones de forêts
+    carte_foret[(carte_hauteur >= seuil_plaine) & (carte_hauteur < seuil_foret)] = 1  # Marquage des zones de forêts
+
     carte_montagne = np.zeros((largeur, hauteur))  # Initialisation de la carte de montagnes
     seuil_montagne = niv_montagne  # Réglage du seuil pour les zones de montagne
-    carte_montagne[carte_hauteur >= seuil_montagne] = 1  # Marquage des zones de montagnes
+    carte_montagne[carte_hauteur >= seuil_foret] = 1  # Marquage des zones de montagnes
 
     # Définition des gradients de couleur en fonction de l'élévation
     couleurs = [
