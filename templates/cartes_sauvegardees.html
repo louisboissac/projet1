@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartes Sauvegardées</title>
+</head>
+<body>
+    <h1>Cartes Sauvegardées</h1>
+    <ul>
+        {% for carte in cartes_sauvegardees %}
+            <li>
+                <h2>Carte {{ carte[0] }}</h2>
+                <p>Taille de la carte : {{ carte[1] }}</p>
+                <p>Niveau d'eau : {{ carte[2] }}</p>
+                <p>Niveau de montagne : {{ carte[3] }}</p>
+                <p>Niveau de plaine : {{ carte[4] }}</p>
+                <p>Niveau de forêt : {{ carte[5] }}</p>
+                <p>Nombre de villes : {{ carte[6] }}</p>
+                <a href="{{ url_for('voir_carte', carte_id=carte[0]) }}">Voir la carte en détail</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

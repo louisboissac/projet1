@@ -78,7 +78,7 @@
 
     <div id="panneau-options">
         <h2>Options</h2>
-        <form action="/" method="post" id="form-options">
+        <form method="post" id="form-options">
             <h2>Densité visuelle</h2>
             <label for="taille_carte">Taille de la carte :</label>
             <input type="number" id="taille_carte" name="taille_carte" min="200" max="1000" value="200">
@@ -98,9 +98,9 @@
             <label for="nombre_villes">Nombre de villes :</label>
             <input type="number" id="nombre_villes" name="nombre_villes" min="0" max="15" value="0">
 
-            <button type="submit" name="regenerer" id="bouton-regenerer">Régénérer la carte</button>
-            <button type="submit" name="sauvegarder" formaction="/sauvegarder" id="bouton-sauvegarder">Sauvegarder la carte</button>
-            <button type="submit" name="generer" id="bouton-generer">Générer la carte</button>
+            <button type="submit" name="regenerer" formmethod="post" id="bouton-regenerer">Régénérer la carte</button>
+            <button type="submit" name="sauvegarder" formmethod="post" id="bouton-sauvegarder">Sauvegarder la carte</button>
+            <button type="submit" name="generer_et_sauvegarder" formmethod="post" id="bouton-generer-et-sauvegarder">Sauvegarder et Générer la carte</button>
         </form>
     </div>
 </body>
