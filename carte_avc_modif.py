@@ -27,10 +27,17 @@ def generate_map(taille_carte,niv_eau,niv_montagne,niv_plaine,niv_foret,nombre_v
     carte_hauteur = (carte_hauteur - np.min(carte_hauteur)) / (np.max(carte_hauteur) - np.min(carte_hauteur))
 
     # Génération d'une carte pour les zones d'eau, de plaines, de forêts et de montagnes
-    carte_eau = niv_eau  # Réglage du seuil pour les zones d'eau
-    carte_plaine = niv_plaine  # Zones de plaines
-    carte_foret = niv_foret # Zones de forêts
-    carte_montagne = niv_montagne  # Zones de montagnes
+    carte_eau = np.zeros((largeur, hauteur))  # Initialisation de la carte d'eau
+    seuil_eau = niv_eau  # Réglage du seuil pour les zones d'eau
+    carte_eau[carte_hauteur < seuil_eau] = 1  # Marquage des zones d'eau
+    carte_plaine = np.zeros((largeur, hauteur))  # Initialisation de la carte de plaines
+    carte_plaine[carte_hauteur >= seuil_eau] = 1  # Marquage des zones de plaines
+    carte_foret = np.zeros((largeur, hauteur))  # Initialisation de la carte de forêts
+    seuil_foret = niv_foret  # Réglage du seuil pour les zones de forêt
+    carte_foret[carte_hauteur >= seuil_foret] = 1  # Marquage des zones de forêts
+    carte_montagne = np.zeros((largeur, hauteur))  # Initialisation de la carte de montagnes
+    seuil_montagne = niv_montagne  # Réglage du seuil pour les zones de montagne
+    carte_montagne[carte_hauteur >= seuil_montagne] = 1  # Marquage des zones de montagnes
 
     # Définition des gradients de couleur en fonction de l'élévation
     couleurs = [
@@ -66,20 +73,14 @@ def generate_map(taille_carte,niv_eau,niv_montagne,niv_plaine,niv_foret,nombre_v
                     carte_couleur[i][j] = couleurs[6]  # Neige
 
     # Ajout des plages autour des zones d'eau
-    masque_eau_erode = np.pad(carte_eau, 1, mode='constant',
-                              constant_values=True)  # Ajout d'une bordure d'eau pour éviter les problèmes de bords
-    masque_eau_erode = masque_eau_erode[:-2, :-2] | masque_eau_erode[1:-1, :-2] | masque_eau_erode[2:,
-                                                                                  :-2] | masque_eau_erode[:-2,
-                                                                                         1:-1] | masque_eau_erode[2:,
-                                                                                                 1:-1] | masque_eau_erode[
-                                                                                                         :-2,
-                                                                                                         2:] | masque_eau_erode[
-                                                                                                               1:-1,
-                                                                                                               2:] | masque_eau_erode[
-                                                                                                                     2:,
-                                                                                                                     2:]  # Érosion de l'eau sur les bords
-    carte_plage = masque_eau_erode & carte_plaine  # Intersection de l'eau érodée avec les zones de plaine
-    carte_couleur[carte_plage] = interpoler_couleur(0.5, [couleurs[2], couleurs[3]])  # Coloration des plages
+    masque_eau_erode = np.pad(carte_eau.astype(int), 1, mode='constant', constant_values=1)
+    masque_eau_erode = masque_eau_erode[:-2, :-2] + masque_eau_erode[1:-1, :-2] + masque_eau_erode[2:, :-2] + \
+                        masque_eau_erode[:-2, 1:-1] + masque_eau_erode[2:, 1:-1] + masque_eau_erode[:-2, 2:] + \
+                        masque_eau_erode[1:-1, 2:] + masque_eau_erode[2:, 2:]
+    masque_eau_erode = (masque_eau_erode > 0).astype(int)  # Convertir en tableau booléen
+    carte_plage = (masque_eau_erode * carte_plaine) > 0
+    carte_couleur[carte_plage] = interpoler_couleur(0.5, [couleurs[2], couleurs[3]])
+
 
     # Définition des noms de villes vikings aléatoires
     noms_villes_vikings = ["Asgard", "Valhalla", "Niflheim", "Midgard", "Jotunheim", "Helheim", "Svartalfheim",
@@ -101,8 +102,8 @@ def generate_map(taille_carte,niv_eau,niv_montagne,niv_plaine,niv_foret,nombre_v
         x, y = np.random.randint(10, largeur - 10), np.random.randint(10,
                                                                       hauteur - 10)  # Assure que les villes ne se situent pas trop près des bords de la carte
         if 10 <= x < largeur - 10 and 10 <= y < hauteur - 10:  # Vérification si les coordonnées sont à l'intérieur de la carte
-            if carte_plaine[x, y] and not carte_eau[x, y] and (x,
-                                                               y) not in coordonnees_villes_esp:  # Vérification si la ville est sur une plaine, n'est pas dans l'eau et n'est pas déjà dans la liste
+            if carte_plaine[x, y] and not carte_eau[
+                x, y]:  # Vérification si la ville est sur une plaine et n'est pas dans l'eau
                 # Vérification des zones d'exclusion autour de la ville
                 exclusion_zone = set((x + i, y + j) for i in range(-15, 16) for j in range(-15, 16))
                 if not coordonnees_villes_esp.intersection(
